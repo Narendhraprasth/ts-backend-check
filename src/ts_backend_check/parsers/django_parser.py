@@ -84,7 +84,7 @@ class DjangoModelParser(BackendModelParser):
             for stmt in node.body:
                 if not isinstance(stmt, ast.Assign):
                     continue
-                fields, blank_fields = self._visit_targets(stmt, fields, blank_fields)
+                self._visit_targets(stmt, fields, blank_fields)
             direct_fields[node.name] = fields
             direct_blank_fields[node.name] = blank_fields
 
@@ -94,7 +94,7 @@ class DjangoModelParser(BackendModelParser):
 
     def _visit_targets(
         self, stmt: ast.Assign, fields: list, blank_fields: list
-    ) -> tuple[list[str], list[str | None]]:
+    ) -> None:
         """
         Visit the targets of an assignment statement and extract field names and blank field names.
 
@@ -111,12 +111,11 @@ class DjangoModelParser(BackendModelParser):
 
         Returns
         -------
-        tuple[list[str], list[str | None]]
-            A tuple containing two lists: field names and blank field names found in the class.
+        None
+            Mutates a tuple containing two lists: field names and blank field names found in the class.
         """
         for target in stmt.targets:
             self._validate_ast_instances(stmt, target, fields, blank_fields)
-        return fields, blank_fields
 
     def _validate_ast_instances(
         self, stmt: ast.Assign, target: ast.expr, fields: list, blank_fields: list

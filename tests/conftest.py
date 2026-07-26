@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import ast
 from pathlib import Path
 
 import pytest
@@ -230,3 +231,40 @@ def test_build_models_signature_accepts_expected_arguments(parser):
         direct_fields={}, direct_blank_fields={}, inherited={}, model_lines={}
     )
     assert isinstance(result, ModelData)
+
+
+# MARK: AST fixtures
+@pytest.fixture()
+def fastapi_load_ast(return_valid_fastapi_models):
+    with open(return_valid_fastapi_models, encoding="utf-8") as file:
+        content = file.read().strip()
+        # Skip any empty lines at the beginning.
+        while content.startswith("\n"):
+            content = content[1:]
+
+        try:
+            tree = ast.parse(content)
+
+        except SyntaxError as e:
+            raise SyntaxError(
+                f"Failed to parse {return_valid_fastapi_models}. Make sure it's a valid Python file. Error: {str(e)}"
+            ) from e
+        return (tree, content)
+
+
+@pytest.fixture()
+def django_load_ast(return_valid_django_models):
+    with open(return_valid_django_models, encoding="utf-8") as file:
+        content = file.read().strip()
+        # Skip any empty lines at the beginning.
+        while content.startswith("\n"):
+            content = content[1:]
+
+        try:
+            tree = ast.parse(content)
+
+        except SyntaxError as e:
+            raise SyntaxError(
+                f"Failed to parse {return_valid_django_models}. Make sure it's a valid Python file. Error: {str(e)}"
+            ) from e
+        return (tree, content)

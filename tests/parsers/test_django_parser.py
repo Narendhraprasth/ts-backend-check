@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import ast
+
 import pytest
 
 from ts_backend_check.parsers.backend_parser import ModelData
@@ -49,3 +51,35 @@ def backend_models_to_ignore_from_config(return_invalid_django_models):
     parser = DjangoModelParser()
     fields = parser.parse(return_invalid_django_models)
     assert fields.models_all_fields[0] == "BackendOnlyModel"
+
+
+def _get_class_node(tree: ast.AST, class_name: str) -> ast.ClassDef:
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef) and node.name == class_name:
+            return node
+    raise ValueError(f"Class {class_name!r} not found in AST")
+
+
+@pytest.mark.parametrize(
+    "class_name, expected_fields, expected_blank_fields",
+    [
+        (
+            "EventModel",
+            ["title", "description", "organizer", "participants", "is_private", "date"],
+            ["participants"],
+        )
+    ],
+)
+def test_validate_ast_instances(
+    django_load_ast, class_name, expected_fields, expected_blank_fields
+):
+    tree, _ = django_load_ast
+    parser = DjangoModelParser()
+    node = _get_class_node(tree, class_name)
+    fields: list = []
+    blank_fields: list = []
+    for stmt in node.body:
+        if isinstance(stmt, ast.Assign):
+            parser._visit_targets(stmt, fields, blank_fields)
+    assert fields == fields
+    assert blank_fields == blank_fields

@@ -60,7 +60,7 @@ class FastAPIModelParser(BackendModelParser):
                 continue
             fields: list = []
             blank_fields: list = []
-            fields, blank_fields = self._visit_annassign(node, fields, blank_fields)
+            self._visit_annassign(node, fields, blank_fields)
             direct_fields[node.name] = fields
             direct_blank_fields[node.name] = blank_fields
         return self._build_models(
@@ -69,7 +69,7 @@ class FastAPIModelParser(BackendModelParser):
 
     def _visit_annassign(
         self, node: ast.ClassDef, fields: list, blank_fields: list
-    ) -> tuple[list[str], list[str | None]]:
+    ) -> None:
         """
         Visit the AnnAssign nodes in the given AST node and extract field names and blank fields Pydantic specific.
 
@@ -86,8 +86,8 @@ class FastAPIModelParser(BackendModelParser):
 
         Returns
         -------
-        tuple[list[str], list[str | None]]
-            A tuple containing two lists: field names and blank field names found in the class.
+        None
+            Mutate fields and blank_fields.
         """
         for stmt in node.body:
             if not isinstance(stmt, ast.AnnAssign):
@@ -100,7 +100,6 @@ class FastAPIModelParser(BackendModelParser):
             fields.append(field_name)
             if self._has_blank(stmt):
                 blank_fields.append(field_name)
-        return fields, blank_fields
 
     def _has_blank(self, stmt: ast.AnnAssign) -> bool:
         """
